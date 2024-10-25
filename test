@@ -1,0 +1,129 @@
+// Orb class representing each moving orb
+class Orb {
+  float x, y;          // Position of the orb
+  float xSpeed, ySpeed; // Speed of movement
+
+  Orb() {
+    // Start at the center of the window
+    x = width / 2;
+    y = height / 2;
+    // Random initial speed in x and y directions
+    xSpeed = random(-2, 2);
+    ySpeed = random(-2, 2);
+  }
+
+  // Update orb's position, bounce on screen edges, and add random motion
+  void update() {
+    x += xSpeed;
+    y += ySpeed;
+
+    // Add small random changes to direction for continuous random motion
+    xSpeed += random(-0.1, 0.1);
+    ySpeed += random(-0.1, 0.1);
+
+    // Bounce off the edges
+    if (x <= 0 || x >= width) {
+      xSpeed *= -1;
+    }
+    if (y <= 0 || y >= height) {
+      ySpeed *= -1;
+    }
+  }
+
+  // Display the orb
+  void display() {
+    fill(255, 100, 100); // Color of the orb
+    noStroke();
+    ellipse(x, y, 30, 30); // Draw a larger circle (orb)
+  }
+
+  // Check if the orb is clicked
+  boolean isClicked(float mouseX, float mouseY) {
+    float distance = dist(mouseX, mouseY, x, y);
+    return distance < 15; // Return true if mouse click is inside the orb
+  }
+}
+
+ArrayList<Orb> orbs = new ArrayList<Orb>();
+int hits = 0;           // Track number of hits
+int misses = 0;         // Track number of misses
+int startTime;          // Store start time for timer
+int endTime = 0;        // Store end time for constant display
+boolean gameEnded = false; // Flag to check if game has ended
+String performanceMessage = ""; // Store performance message
+
+void setup() {
+  size(500, 500);
+  startTime = millis(); // Record the start time
+  // Spawn initial orbs in the center
+  for (int i = 0; i < 10; i++) {
+    orbs.add(new Orb());
+  }
+}
+
+void draw() {
+  background(0); // Clear the screen
+  
+  if (!gameEnded) {
+    // Update and display each orb
+    for (int i = orbs.size() - 1; i >= 0; i--) {
+      Orb orb = orbs.get(i);
+      orb.update();
+      orb.display();
+    }
+
+    // Check if all orbs are removed to end the game
+    if (orbs.size() == 0) {
+      gameEnded = true;
+      endTime = (millis() - startTime) / 1000; // Record final time in seconds
+
+      // Determine performance message based on end time and misses
+      if (endTime <= 15) {
+        if (misses < 10) {
+          performanceMessage = "Impressive!";
+        } else if (misses < 15) {
+          performanceMessage = "Great!";
+        } else {
+          performanceMessage = "Nice!";
+        }
+      } else if (endTime <= 30) {
+        if (misses < 10) {
+          performanceMessage = "Great!";
+        } else {
+          performanceMessage = "Nice!";
+        }
+      } else if (endTime <= 60) {
+        performanceMessage = "Nice!";
+      }
+    }
+  } else {
+    // Display end screen with performance message and results
+    fill(255);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text(performanceMessage, width / 2, height / 2 - 80); // Display performance message
+    text("Game Over", width / 2, height / 2 - 40);
+    text("Misses: " + misses, width / 2, height / 2);
+    text("Time Taken: " + endTime + "s", width / 2, height / 2 + 40);
+  }
+}
+
+void mousePressed() {
+  if (gameEnded) return; // Stop checking clicks if game has ended
+  
+  boolean hit = false;
+  
+  // Check if any orb is clicked, and remove it from the list
+  for (int i = orbs.size() - 1; i >= 0; i--) {
+    if (orbs.get(i).isClicked(mouseX, mouseY)) {
+      orbs.remove(i);
+      hits++; // Increment hit counter
+      hit = true;
+      break; // Remove only one orb at a time
+    }
+  }
+  
+  if (!hit) {
+    misses++; // Increment miss counter if no orb was clicked
+  }
+}
