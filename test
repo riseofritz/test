@@ -1,63 +1,52 @@
-// Orb class representing each moving orb
-class Orb {
-  float x, y;          // Position of the orb
-  float xSpeed, ySpeed; // Speed of movement
+// Class to represent a single Bacteria organism
+class Bacteria {
+  int x, y;       // Position of the bacteria
+  int color;      // Color of the bacteria
 
-  Orb() {
-    // Start at the center of the window
-    x = width / 2;
-    y = height / 2;
-    // Random initial speed in x and y directions
-    xSpeed = random(-2, 2);
-    ySpeed = random(-2, 2);
+  // Constructor to initialize the bacteria's position and color
+  Bacteria(int startX, int startY, int colorValue) {
+    x = startX;
+    y = startY;
+    color = colorValue;
   }
 
-  // Update orb's position, bounce on screen edges, and add random motion
-  void update() {
-    x += xSpeed;
-    y += ySpeed;
-
-    // Add small random changes to direction for continuous random motion
-    xSpeed += random(-0.1, 0.1);
-    ySpeed += random(-0.1, 0.1);
-
-    // Bounce off the edges
-    if (x <= 0 || x >= width) {
-      xSpeed *= -1;
-    }
-    if (y <= 0 || y >= height) {
-      ySpeed *= -1;
-    }
+  // Move function for random walk pattern
+  void move() {
+    x += int(random(-2, 2));
+    y += int(random(-2, 2));
+    
+    // Keep bacteria within bounds
+    if (x < 0) x = 0;
+    if (x > width) x = width;
+    if (y < 0) y = 0;
+    if (y > height) y = height;
   }
 
-  // Display the orb
-  void display() {
-    fill(255, 100, 100); // Color of the orb
+  // Show function to draw bacteria with its color and position
+  void show() {
+    fill(color);
     noStroke();
-    ellipse(x, y, 30, 30); // Draw a larger circle (orb)
-  }
-
-  // Check if the orb is clicked
-  boolean isClicked(float mouseX, float mouseY) {
-    float distance = dist(mouseX, mouseY, x, y);
-    return distance < 15; // Return true if mouse click is inside the orb
+    ellipse(x, y, 30, 30); // Draw a larger circle for each bacteria
   }
 }
 
-ArrayList<Orb> orbs = new ArrayList<Orb>();
-int hits = 0;           // Track number of hits
-int misses = 0;         // Track number of misses
-int startTime;          // Store start time for timer
-int endTime = 0;        // Store end time for constant display
+Bacteria[] bacteriaArray; // Array to store multiple Bacteria instances
+int numBacteria = 10;     // Number of bacteria to create
+int hits = 0;             // Track number of hits
+int misses = 0;           // Track number of misses
+int startTime;            // Store start time for timer
+int endTime = 0;          // Store end time for constant display
 boolean gameEnded = false; // Flag to check if game has ended
 String performanceMessage = ""; // Store performance message
 
 void setup() {
   size(500, 500);
   startTime = millis(); // Record the start time
-  // Spawn initial orbs in the center
-  for (int i = 0; i < 10; i++) {
-    orbs.add(new Orb());
+
+  // Initialize bacteria array with instances
+  bacteriaArray = new Bacteria[numBacteria];
+  for (int i = 0; i < numBacteria; i++) {
+    bacteriaArray[i] = new Bacteria(width / 2, height / 2, color(255, 100, 100));
   }
 }
 
@@ -65,15 +54,15 @@ void draw() {
   background(0); // Clear the screen
   
   if (!gameEnded) {
-    // Update and display each orb
-    for (int i = orbs.size() - 1; i >= 0; i--) {
-      Orb orb = orbs.get(i);
-      orb.update();
-      orb.display();
+    // Update and display each bacteria
+    for (int i = bacteriaArray.length - 1; i >= 0; i--) {
+      Bacteria b = bacteriaArray[i];
+      b.move();
+      b.show();
     }
 
-    // Check if all orbs are removed to end the game
-    if (orbs.size() == 0) {
+    // Check if all bacteria are removed to end the game
+    if (bacteriaArray.length == 0) {
       gameEnded = true;
       endTime = (millis() - startTime) / 1000; // Record final time in seconds
 
@@ -113,17 +102,30 @@ void mousePressed() {
   
   boolean hit = false;
   
-  // Check if any orb is clicked, and remove it from the list
-  for (int i = orbs.size() - 1; i >= 0; i--) {
-    if (orbs.get(i).isClicked(mouseX, mouseY)) {
-      orbs.remove(i);
-      hits++; // Increment hit counter
+  // Check if any bacteria is clicked and remove it
+  for (int i = bacteriaArray.length - 1; i >= 0; i--) {
+    Bacteria b = bacteriaArray[i];
+    float distance = dist(mouseX, mouseY, b.x, b.y);
+    if (distance < 15) {
+      bacteriaArray = removeBacteria(bacteriaArray, i); // Remove clicked bacteria
+      hits++;
       hit = true;
-      break; // Remove only one orb at a time
+      break;
     }
   }
   
   if (!hit) {
-    misses++; // Increment miss counter if no orb was clicked
+    misses++; // Increment miss counter if no bacteria was clicked
   }
+}
+
+// Helper function to remove a bacteria from array
+Bacteria[] removeBacteria(Bacteria[] array, int index) {
+  Bacteria[] newArray = new Bacteria[array.length - 1];
+  for (int i = 0, j = 0; i < array.length; i++) {
+    if (i != index) {
+      newArray[j++] = array[i];
+    }
+  }
+  return newArray;
 }
